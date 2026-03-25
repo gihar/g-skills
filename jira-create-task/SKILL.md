@@ -107,6 +107,8 @@ Parse `required: true` fields. For each required field not provided by the user:
 2. Use `mcp__mcp-atlassian__jira_get_field_options` to get allowed values
 3. ASK the user to choose a value
 
+**Беклог field rule:** If the issue type has a "Беклог" field (select or multi-select), always present the **complete list** of allowed values from the metadata response (`allowedValues`) as options when asking the user. Do NOT pre-filter or guess — show every option so the user can pick.
+
 **Field format by type:**
 - **Select (dropdown)**: `{"value": "Option Name"}`
 - **Multi-select**: `[{"value": "Option1"}, {"value": "Option2"}]`
