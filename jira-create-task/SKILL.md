@@ -35,8 +35,11 @@ digraph jira_create {
   "Parse error, ask missing fields" -> "Create issue";
   "Creation failed?" -> "Files to attach?" [label="no"];
   "Files to attach?" -> "Attach files" [label="yes"];
-  "Files to attach?" -> "Report result" [label="no"];
-  "Attach files" -> "Report result";
+  "Files to attach?" -> "Issue links?" [label="no"];
+  "Attach files" -> "Issue links?";
+  "Issue links?" -> "Create issue links" [label="yes"];
+  "Issue links?" -> "Report result" [label="no"];
+  "Create issue links" -> "Report result";
 }
 ```
 
@@ -59,6 +62,7 @@ Extract from user message:
 - **Issue type** (e.g. "change request", "defect", "баг", "задача"). No default — ASK if missing
 - **Assignee** (name or email). No default — ASK if missing
 - **File paths** — any local files or images the user referenced or attached
+- **Issue links** — e.g. "блокирует CAB-10072", "relates to OPER-123". Extract link type and target issue key
 - **Everything else** — raw material for title and description
 
 ### 2. Resolve Assignee
@@ -172,7 +176,24 @@ mcp__mcp-atlassian__jira_update_issue(
 )
 ```
 
-### 10. Report Result
+### 10. Create Issue Links
+
+If the user specified issue links (e.g. "блокирует CAB-10072", "relates to OPER-123"):
+
+```
+mcp__mcp-atlassian__jira_create_issue_link(
+  link_type: "Blocks",
+  inward_issue_key: <created issue key>,
+  outward_issue_key: <target issue key>
+)
+```
+
+**Common link types:**
+- `"Blocks"` — "блокирует", "blocks"
+- `"Relates"` — "связано с", "relates to"
+- `"Duplicate"` — "дубликат", "duplicate"
+
+### 11. Report Result
 
 Show the user:
 - Issue key with link (e.g. [CAB-123](https://detmir.atlassian.net/browse/CAB-123))
@@ -188,6 +209,18 @@ Show the user:
 - **Unknown issue type**: Show available types from `getJiraProjectIssueTypesMetadata`.
 - **Attachment failed**: Report which files failed. The issue is already created — provide the key so user can attach manually.
 - **Permission denied**: Report to user, suggest checking project access.
+
+## Known Project Patterns
+
+### Project OPER
+- Has required field **«Номер CAB»** (`customfield_10365`, text) — fill with the linked CAB issue key if available
+- Uses issue types: Business task, Internal task, Bug, ОПЭ
+- Always requires **Беклог** (`customfield_10362`, multi-select)
+
+### Project CAB
+- Uses issue types: Change Request, Defect, Project
+- Always requires **Беклог**, **Подразделение заказчика** (`customfield_10324`, select), **Заказчик** (`customfield_10363`, cascading select)
+- **Заказчик** is a cascading select: parent = department name, child = person name (e.g. `{"value": "Коммерческая дирекция ТНП", "child": {"value": "Какуркина Эльвира Курбановна"}}`)
 
 ## What NOT to Do
 
