@@ -7,6 +7,11 @@ description: Use when the user asks to create a Jira issue, task, bug, or story.
 
 Create a well-structured Jira issue from free-form user input using MCP tools.
 
+## Critical Rules
+
+- **AskUserQuestion tool**: ALWAYS use the `AskUserQuestion` tool when asking the user for input (issue type, field values, assignee clarification, etc.). NEVER ask questions as plain text output.
+- **Parallel calls**: Maximize parallel API calls. Steps 1-3 (cloudId, assignee lookup, issue types) run in parallel. When creating multiple issues, create them in parallel. Post-creation steps (assign, link) also run in parallel.
+
 ## Workflow
 
 ```dot
@@ -29,17 +34,12 @@ digraph jira_create {
   "Missing required fields?" -> "Formulate title + description" [label="no"];
   "ASK user for missing fields" -> "Formulate title + description";
   "Formulate title + description" -> "Read attached files";
-  "Read attached files" -> "Create issue";
-  "Create issue" -> "Creation failed?";
+  "Read attached files" -> "Create issue(s)";
+  "Create issue(s)" -> "Creation failed?";
   "Creation failed?" -> "Parse error, ask missing fields" [label="yes"];
-  "Parse error, ask missing fields" -> "Create issue";
-  "Creation failed?" -> "Files to attach?" [label="no"];
-  "Files to attach?" -> "Attach files" [label="yes"];
-  "Files to attach?" -> "Issue links?" [label="no"];
-  "Attach files" -> "Issue links?";
-  "Issue links?" -> "Create issue links" [label="yes"];
-  "Issue links?" -> "Report result" [label="no"];
-  "Create issue links" -> "Report result";
+  "Parse error, ask missing fields" -> "Create issue(s)";
+  "Creation failed?" -> "Assign + Link + Attach" [label="no"];
+  "Assign + Link + Attach" -> "Report result";
 }
 ```
 
@@ -52,6 +52,11 @@ mcp__claude_ai_Atlassian__getAccessibleAtlassianResources()
 ```
 
 Extract `id` from response. Cache it for subsequent calls in the same session.
+
+**Parallel bootstrap:** Call these three in parallel on first invocation:
+1. `getAccessibleAtlassianResources()` — cloudId
+2. `lookupJiraAccountId(cloudId: "detmir.atlassian.net", searchString: ...)` — assignee (use site URL as cloudId before real cloudId is resolved)
+3. `getJiraProjectIssueTypesMetadata(cloudId: "detmir.atlassian.net", projectIdOrKey: ...)` — issue types
 
 ## Steps
 
@@ -76,9 +81,16 @@ mcp__claude_ai_Atlassian__lookupJiraAccountId(
 )
 ```
 
-Pass the returned `accountId` to the `assignee` parameter when creating the issue.
+Save both the `accountId` AND the `email` from the response — you'll need the email for assignment.
 
-**Do NOT use** `mcp__mcp-atlassian__jira_get_user_profile` — it fails with Cyrillic names.
+**Assignee assignment gotcha:** `mcp__mcp-atlassian__jira_create_issue` does NOT reliably accept `accountId` as assignee. Instead:
+1. Create the issue WITHOUT assignee
+2. After creation, use `mcp__mcp-atlassian__jira_update_issue` with the user's **email** to assign:
+   ```
+   jira_update_issue(issue_key: "OPER-123", fields: '{"assignee": "user@detmir.ru"}')
+   ```
+
+**Do NOT use** `jira_get_user_profile` for Cyrillic names — it will fail.
 
 ### 3. Get Issue Types for Project
 
@@ -142,16 +154,19 @@ If the user provided files (screenshots, documents, spreadsheets, etc.), **read 
 
 ### 7. Create Issue
 
+Create WITHOUT assignee — assign separately after creation (see step 2).
+
 ```
 mcp__mcp-atlassian__jira_create_issue(
   project_key: <project>,
   summary: <title>,
   issue_type: <type name>,
-  assignee: <accountId>,
   description: <description in Markdown>,
   additional_fields: <JSON string of custom fields>
 )
 ```
+
+**Multiple issues:** When creating 2+ issues, call `jira_create_issue` in parallel.
 
 ### 8. Handle Creation Errors (Retry)
 
@@ -164,10 +179,19 @@ If creation fails with "Заполните поле X, Y, Z":
 
 This is expected — the metadata API does not always report all required fields.
 
-### 9. Attach Files
+### 9. Post-Creation: Assign + Attach + Link (in parallel)
 
-If the user provided file paths, attach them AFTER issue creation:
+After successful creation, run ALL post-creation steps in parallel:
 
+**Assign** (use email, not accountId):
+```
+mcp__mcp-atlassian__jira_update_issue(
+  issue_key: <created issue key>,
+  fields: '{"assignee": "<email>"}'
+)
+```
+
+**Attach files** (if user provided file paths):
 ```
 mcp__mcp-atlassian__jira_update_issue(
   issue_key: <created issue key>,
@@ -176,10 +200,7 @@ mcp__mcp-atlassian__jira_update_issue(
 )
 ```
 
-### 10. Create Issue Links
-
-If the user specified issue links (e.g. "блокирует CAB-10072", "relates to OPER-123"):
-
+**Create issue links** (if user specified links):
 ```
 mcp__mcp-atlassian__jira_create_issue_link(
   link_type: "Blocks",
@@ -193,7 +214,9 @@ mcp__mcp-atlassian__jira_create_issue_link(
 - `"Relates"` — "связано с", "relates to"
 - `"Duplicate"` — "дубликат", "duplicate"
 
-### 11. Report Result
+**For multiple issues:** Run all assign/link/attach calls for ALL issues in a single parallel batch.
+
+### 10. Report Result
 
 Show the user:
 - Issue key with link (e.g. [CAB-123](https://detmir.atlassian.net/browse/CAB-123))
@@ -224,9 +247,12 @@ Show the user:
 
 ## What NOT to Do
 
+- Do NOT ask questions as plain text — ALWAYS use the `AskUserQuestion` tool.
+- Do NOT pass `accountId` as assignee to `jira_create_issue` — it silently fails. Use email via `jira_update_issue` after creation.
 - Do NOT use `jira_get_user_profile` for Cyrillic names — it will fail.
 - Do NOT rely solely on metadata for required fields — always handle creation errors.
 - Do NOT guess the assignee — always resolve via `lookupJiraAccountId`.
 - Do NOT skip asking for missing required fields.
 - Do NOT assume issue type from context — if the user didn't say it, ask.
 - Do NOT hardcode issue type names — they vary per project (e.g. CAB uses "Change Request" and "Defect", not "Task" and "Bug").
+- Do NOT run API calls sequentially when they can be parallelized.
