@@ -19,7 +19,10 @@ digraph jira_create {
   rankdir=TB;
   "Parse user input" -> "Project specified?";
   "Project specified?" -> "Use specified project" [label="yes"];
-  "Project specified?" -> "Use default: CAB" [label="no"];
+  "Project specified?" -> "Blocks a CAB issue?" [label="no"];
+  "Blocks a CAB issue?" -> "ASK user for project (NOT CAB)" [label="yes"];
+  "Blocks a CAB issue?" -> "Use default: CAB" [label="no"];
+  "ASK user for project (NOT CAB)" -> "Use specified project";
   "Use specified project" -> "Issue type specified?";
   "Use default: CAB" -> "Issue type specified?";
   "Issue type specified?" -> "Assignee specified?" [label="yes"];
@@ -63,7 +66,7 @@ Extract `id` from response. Cache it for subsequent calls in the same session.
 ### 1. Parse Input
 
 Extract from user message:
-- **Project key** (e.g. "в проекте PROJ", "project: DEV"). Default: `CAB`
+- **Project key** (e.g. "в проекте PROJ", "project: DEV"). Default: `CAB`, НО: если задача блокирует/связана с CAB-issue, то её нельзя создавать в CAB (CAB-задача не может блокировать другую CAB-задачу в этом workflow). В таком случае ASK пользователя о проекте через `AskUserQuestion` и не предлагать CAB как опцию.
 - **Issue type** (e.g. "change request", "defect", "баг", "задача"). No default — ASK if missing
 - **Assignee** (name or email). No default — ASK if missing
 - **File paths** — any local files or images the user referenced or attached
