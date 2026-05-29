@@ -6,6 +6,7 @@ Claude Code skills collection.
 
 | Skill | Description |
 |-------|-------------|
+| [hr-backlog-updater](hr-backlog-updater/) | Mirror Jira (CAB + linked FI) state into an Excel HR backlog file and publish it to Confluence — skip-statuses, FI changelog history, planned vs actual dates |
 | [jira-create-task](jira-create-task/) | Create Jira issues from free-form input via MCP tools |
 | [send-to-confluence](send-to-confluence/) | Create Confluence articles from files or text, with PDF image extraction |
 
@@ -59,6 +60,7 @@ Each skill lists its own prerequisites in `SKILL.md`. Common requirements:
 - [mcp-atlassian](https://github.com/sooperset/mcp-atlassian) MCP server configured
 - Atlassian (Claude AI connector) MCP server enabled in Claude Code
 - `send-to-confluence` also requires `pdfimages` (part of [poppler](https://poppler.freedesktop.org/)) for PDF image extraction: `brew install poppler`
+- `hr-backlog-updater` requires Python 3.10+ and [openpyxl](https://openpyxl.readthedocs.io/): `pip install openpyxl`. The skill bundles helper scripts under `hr-backlog-updater/scripts/` — copy the whole directory (not just `SKILL.md`) when installing this one.
 
 ## Structure
 
