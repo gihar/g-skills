@@ -9,6 +9,7 @@ Claude Code skills collection.
 | [hr-backlog-updater](hr-backlog-updater/) | Mirror Jira (CAB + linked FI) state into an Excel HR backlog file and publish it to Confluence — skip-statuses, FI changelog history, planned vs actual dates |
 | [jira-create-task](jira-create-task/) | Create Jira issues from free-form input via MCP tools |
 | [send-to-confluence](send-to-confluence/) | Create Confluence articles from files or text, with PDF image extraction |
+| [daily-news-digest](daily-news-digest/) | Daily news digest for Russia & world with fact-checking — compact Telegram-friendly format |
 
 ## Installation
 
