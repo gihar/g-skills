@@ -10,6 +10,7 @@ Claude Code skills collection.
 | [jira-create-task](jira-create-task/) | Create Jira issues from free-form input via MCP tools |
 | [send-to-confluence](send-to-confluence/) | Create Confluence articles from files or text, with PDF image extraction |
 | [daily-news-digest](daily-news-digest/) | Daily news digest for Russia & world with fact-checking — compact Telegram-friendly format |
+| [chestny-znak-monitoring-report](chestny-znak-monitoring-report/) | Регулярный мониторинг новостей и нормативных изменений по маркировке «Честный ЗНАК» в России с подготовкой PDF-отчета |
 
 ## Installation
 
