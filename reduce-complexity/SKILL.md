@@ -51,6 +51,9 @@ F-grade is CC ≥ 41.
   offenders as `file:line (CC)` and confirm scope with the user when it includes
   **one-off scripts / generated code / vendored files** — those are often
   untested and lower value; default to skipping unless asked.
+- **If the measure shows no D/E/F (only grade C), the default scope is *empty*.**
+  Surface that and confirm before doing any C→B work — grade C is an acceptable
+  resting place (see Notes), so don't silently churn it; let the user opt in.
 - Use a dedicated branch, e.g. `refactor/reduce-<grade>-complexity`. One branch
   per grade batch.
 
@@ -128,12 +131,37 @@ new high-grade helper), run all touched tests together, check lint/type/CC delta
 and **review the diffs** — before committing. Do not trust subagent self-reports
 for the merge decision.
 
+### Parallel-run safety (non-negotiable — learned the hard way)
+
+- **Forbid ALL git state changes in the subagent prompt:** no `git stash` /
+  `checkout` / `reset` / `clean` / `restore` / `add` / `commit`. One agent that
+  runs `git stash pop` to chase a flake can bleed an unrelated stash into the
+  shared working tree and corrupt every agent's work. If a test flakes, **re-run
+  it** — never touch git state. (Read-only `git diff`/`log`/`show` are fine.)
+- **Measure lint/type baselines yourself before dispatch** and hand each agent its
+  file's numbers. Agents self-check **stash-free and per-file** — e.g.
+  `mypy <file> 2>&1 | grep '^<file>:' | grep -c error:` — never via `git stash`
+  (a repo-global race) and never from a multi-file run (follow-imports inflate the
+  count; measure the file the way the agent will).
+- **A whole-project type-check (`tsc --noEmit`) does NOT parallelize:** concurrent
+  runs share the incremental cache and report phantom errors in other agents'
+  in-flight files. Tell each agent only to confirm no error names ITS file; the
+  **lead runs the one authoritative `tsc --noEmit` per wave**.
+- **Confirm the tree is quiescent first.** A concurrent agent session or a
+  format-on-save watcher editing the same files will collide and mix foreign
+  changes into your diffs. Stage **explicit paths only** — never `git add -A`.
+- **Each agent reports any NEW files it created** (extracted sub-components/helpers);
+  the lead stages those explicitly.
+
 ## 6. Commit conventions
 
 - `refactor: cut cyclomatic complexity of <the N grade-X functions>`, with a body
   listing each function `D(29) -> A(5)` and the helpers extracted, plus "Behaviour
   preserved; locked with characterization tests; no new lint/type regressions."
 - Stage **only** the refactored source + new test files; leave unrelated changes alone.
+- **For large parallel batches, commit per wave** (right after your aggregate
+  re-verification) instead of one giant commit — it isolates any contamination and
+  gives clean recovery points if a later wave goes wrong.
 
 ## Notes & gotchas
 
