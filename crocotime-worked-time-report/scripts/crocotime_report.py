@@ -23,6 +23,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.formatting.rule import DataBarRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.datetime import CALENDAR_MAC_1904
 
 MONTHS_RU = (
     "",
@@ -623,6 +624,10 @@ def build_workbook(
     source_url: str,
 ):
     wb = Workbook()
+    # Система дат 1904: иначе Excel показывает отрицательную переработку
+    # (отработано меньше нормы) как ####, не умея форматировать
+    # отрицательное время в системе дат 1900.
+    wb.epoch = CALENDAR_MAC_1904
     month_title = MONTHS_RU[month]
     period_title = f"{MONTHS_RU[month].lower()} {year}"
     add_summary_sheet(wb, month_title, employees, monthly)
