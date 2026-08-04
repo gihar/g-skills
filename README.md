@@ -12,6 +12,7 @@ Claude Code skills collection.
 | [daily-news-digest](daily-news-digest/) | Daily news digest for Russia & world with fact-checking — compact Telegram-friendly format |
 | [chestny-znak-monitoring-report](chestny-znak-monitoring-report/) | Регулярный мониторинг новостей и нормативных изменений по маркировке «Честный ЗНАК» в России с подготовкой PDF-отчета |
 | [reduce-complexity](reduce-complexity/) | Behaviour-preserving cyclomatic-complexity reduction (Python radon / JS-TS ESLint): measure → lock behaviour with tests → extract helpers → verify with zero new lint/type regressions |
+| [crocotime-worked-time-report](crocotime-worked-time-report/) | Формирует месячный XLSX-отчёт по отработанному времени из Crocotime Web API |
 
 ## Installation
 
@@ -64,6 +65,7 @@ Each skill lists its own prerequisites in `SKILL.md`. Common requirements:
 - Atlassian (Claude AI connector) MCP server enabled in Claude Code
 - `send-to-confluence` also requires `pdfimages` (part of [poppler](https://poppler.freedesktop.org/)) for PDF image extraction: `brew install poppler`
 - `hr-backlog-updater` requires Python 3.10+ and [openpyxl](https://openpyxl.readthedocs.io/): `pip install openpyxl`. The skill bundles helper scripts under `hr-backlog-updater/scripts/` — copy the whole directory (not just `SKILL.md`) when installing this one.
+- `crocotime-worked-time-report` requires Python 3.11+, `openpyxl`, LibreOffice, a Crocotime Web API URL and a Crocotime token. It bundles a report generator and API reference — copy the whole directory when installing.
 
 ## Structure
 
