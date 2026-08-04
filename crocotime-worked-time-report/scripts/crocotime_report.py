@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import ssl
 import subprocess
 import sys
 import urllib.error
@@ -57,6 +58,11 @@ class CrocotimeClient:
         self.token = token
         self.app_version = app_version
         self.timeout = timeout
+        # Некоторые инсталляции Crocotime принимают только легаси-шифры TLS 1.2
+        # (SECLEVEL=1); с настройками OpenSSL по умолчанию handshake зависает.
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        self.ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
 
     def call(self, controller: str, query: dict[str, Any] | None = None) -> dict[str, Any]:
         payload: dict[str, Any] = {"server_token": self.token, "controller": controller}
@@ -72,7 +78,7 @@ class CrocotimeClient:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with urllib.request.urlopen(request, timeout=self.timeout, context=self.ssl_context) as response:
                 raw = response.read()
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:500]
@@ -87,9 +93,11 @@ class CrocotimeClient:
             raise CrocotimeError(f"Неожиданный ответ Crocotime для {controller}")
         if data.get("error"):
             raise CrocotimeError(f"Ошибка Crocotime ({controller}): {data['error']}")
-        result = data.get("result", {})
+        result = data.get("result")
         if not isinstance(result, dict):
-            raise CrocotimeError(f"В ответе {controller} нет объекта result")
+            # Некоторые версии сервера возвращают items/activities
+            # на верхнем уровне, без обёртки result.
+            result = data
         return result
 
 
@@ -321,6 +329,10 @@ def fetch_report_data(
                     train_by_employee[employee.employee_id].append((left, right))
 
     daily_rows: list[DailyRow] = []
+    # У некоторых версий сервера activity.norm по интервалу [00:00, 24:00]
+    # захватывает соседний день расписания; авторитетный источник дневной
+    # нормы — api_employee_working_day_schedule.
+    schedule_norm_totals: dict[int, int] = defaultdict(int)
     for day_start, day_end in iter_days(start, end):
         query_interval = {"interval": [int(day_start.timestamp()), int(day_end.timestamp())], "employees": employee_ids}
         day_epoch = int(day_start.timestamp())
@@ -339,9 +351,10 @@ def fetch_report_data(
             distractions = safe_int(activity.get("forbidden_time"), 0)
             without = safe_int(activity.get("unknown_time"), max(0, worked - productive - distractions))
             status = status_from_schedule(schedule)
+            schedule_norm_totals[employee_id] += safe_int(schedule.get("norm"), 0)
             if worked <= 0 and not status:
                 continue
-            norm = safe_int(activity.get("norm"), safe_int(schedule.get("norm"), 0))
+            norm = safe_int(schedule.get("norm"), safe_int(activity.get("norm"), 0))
             begin = safe_int(period.get("begin"), -1)
             end_seconds = safe_int(period.get("end"), -1)
             employee = employee_by_id[employee_id]
@@ -362,6 +375,11 @@ def fetch_report_data(
                     occupancy=occupancy_bins(day_start, train_by_employee[employee_id]),
                 )
             )
+    # Месячная норма — сумма дневных норм расписания: месячный activity.norm
+    # может быть завышен на день из-за включительной границы интервала.
+    for employee_id, norm_total in schedule_norm_totals.items():
+        if employee_id in monthly and isinstance(monthly[employee_id], dict):
+            monthly[employee_id]["norm"] = norm_total
     return employees, monthly, daily_rows
 
 
