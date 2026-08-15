@@ -11,6 +11,7 @@ Claude Code skills collection.
 | [send-to-confluence](send-to-confluence/) | Create Confluence articles from files or text, with PDF image extraction |
 | [daily-news-digest](daily-news-digest/) | Daily news digest for Russia & world with fact-checking — compact Telegram-friendly format |
 | [chestny-znak-monitoring-report](chestny-znak-monitoring-report/) | Регулярный мониторинг новостей и нормативных изменений по маркировке «Честный ЗНАК» в России с подготовкой PDF-отчета |
+| [cron-job-operations](cron-job-operations/) | Triage, rerun, and recover failed or missed Hermes cron jobs with artifact verification and watchdog patterns |
 | [reduce-complexity](reduce-complexity/) | Behaviour-preserving cyclomatic-complexity reduction (Python radon / JS-TS ESLint): measure → lock behaviour with tests → extract helpers → verify with zero new lint/type regressions |
 | [crocotime-worked-time-report](crocotime-worked-time-report/) | Формирует месячный XLSX-отчёт по отработанному времени из Crocotime Web API |
 
