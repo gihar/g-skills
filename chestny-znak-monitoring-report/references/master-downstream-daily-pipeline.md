@@ -7,8 +7,8 @@ Use this pattern when the same daily Chestny ZNAK monitoring facts need multiple
 1. Create one **master** cron job that does all web/legal/source collection and normalization.
 2. Deliver the master job to `local` only.
 3. Make downstream jobs depend on the master via `context_from: [<master_job_id>]`.
-4. Downstream jobs must not repeat `web_search`/`web_extract`; they should transform the injected `MASTER_MONITORING_RESULT` into audience-specific output.
-5. Stagger schedules so the master finishes before downstream jobs run.
+4. Downstream jobs must not repeat `web_search`/`web_extract`; they should read the current master JSON (context_from is a pointer, not proof), and first run `markirovka_master_contract.py <path>` to reject a baseline, stale file, legal source error, or unverified signal. `partial` is publishable only with a clear business-language coverage caveat.
+5. Stagger schedules so the master finishes before downstream jobs run; watchdog validates the same contract before considering the master successful.
 
 ## Example schedule
 

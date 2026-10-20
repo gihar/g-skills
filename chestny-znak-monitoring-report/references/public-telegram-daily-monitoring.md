@@ -16,17 +16,11 @@ chmod +x /home/user/.hermes/scripts/telegram_send_document_caption.py
   --chat-id @markirovka_pro \
   --file /home/user/.hermes/cache/documents/markirovka-pro-daily-YYYY-MM-DD.pdf \
   --caption-file /home/user/reports/chestny-znak/downstream/markirovka-pro-daily-YYYY-MM-DD.caption.html \
-  --parse-mode HTML
+  --parse-mode HTML --require-public-layout
 ```
 
-5. Keep the caption short enough for Telegram document captions (target ≤950 characters; Bot API limit is 1024). Put detail in the PDF.
-6. Use a self-contained cron prompt that says:
-   - daily public monitoring post for `@markirovka_pro` or the relevant channel;
-   - no personal header or `Подготовлено для: Алексей`;
-   - post text and PDF must be one Telegram message when PDF is present;
-   - clickable source names, no separate `источники` label;
-   - still publish a short “no significant changes” post if the channel needs daily proof-of-work;
-   - include the anti-miss normative control and full watchlist requirements from the main skill.
+5. The helper **rejects**, never truncates, malformed HTML and captions exceeding 950 visible UTF-16 characters after HTML entity parsing (Telegram limit: 1024). With `--require-public-layout`, it also checks the dated bold headline and spaced **Что нового / Что сделать / [Ближайшие сроки]** blocks. If the deadline block is present, its header must be on a separate line, followed by one `• ` bullet per deadline; no single inline paragraph or semicolon-joined list. It requires named, nonempty HTTP(S) links and escaped `&amp;` in link URLs/text; `--dry-run` validates without token access or publishing. If validation fails, shorten/edit the caption semantically and retry; do not discard legal caveats.
+6. Use a self-contained cron prompt for `@markirovka_pro`: one PDF + HTML caption, no personal header. Mobile-friendly structure with blank lines: `<b>Маркировка · DD.MM.YYYY</b>`, `<b>Что нового:</b>` (main confirmed signal first, including effective dates of new norms; or one concise no-change line), `<b>Что сделать:</b>` (specific action), and optional `<b>Ближайшие сроки:</b>` on its own line, followed by one `• DD.MM — group · action · <a href="https://...">act</a>` line per distinct deadline (even if several groups share the date; literal bullet characters, not HTML `<ul>`). No fixed one-deadline limit: show all new critical dates of the day if they fit the caption; usually 1–2 routine dates suffice. If critical dates cannot fit despite semantic compression, name the most urgent and explicitly point to the remaining urgent dates in the attached PDF. Never recycle a long list of old deadlines every day. Mark statuses next to each claim: `Принято`, `Проект — не действует`, `Сбой — статус уточняется`; no global confidence statement. Place a named clickable `<a href="https://...">акт/публикация</a>` beside each significant claim, not in a trailing links section. Never present a `requires_recheck=true` date as current without independent legal re-verification. When no confirmed changes are found but official news coverage is partial for both Честный ЗНАК and Минпромторг, write in the public «Что нового» block: «Среди проверенных публикаций новых подтверждённых изменений за сутки не выявлено. Публикации „Честного ЗНАКа“ и Минпромторга могли быть охвачены не полностью». Name only the affected outlet if just one was incomplete. Never assert unconditionally that there were no changes. This caveat concerns discovery of additional news, not the reliability of separately verified acts or deadlines. The sender validates layout and length, not factual coverage. Keep the normative-control process in the master task; downstream does not search again.
 7. Convert local time to UTC in the cron expression. Example: `09:30 MSK` → `30 6 * * *`.
 8. Set `enabled_toolsets` narrowly. For master/downstream: master needs `web`, `terminal`, `file`; downstream publisher needs only `terminal`, `file`.
 
@@ -42,7 +36,7 @@ chmod +x /home/user/.hermes/scripts/telegram_send_document_caption.py
   --chat-id @markirovka_pro \
   --file /path/to/existing.pdf \
   --caption-file /path/to/caption.html \
-  --parse-mode HTML \
+  --parse-mode HTML --require-public-layout \
   --dry-run
 ```
 
