@@ -24,6 +24,10 @@ chmod +x /home/user/.hermes/scripts/telegram_send_document_caption.py
 7. Convert local time to UTC in the cron expression. Example: `09:30 MSK` → `30 6 * * *`.
 8. Set `enabled_toolsets` narrowly. For master/downstream: master needs `web`, `terminal`, `file`; downstream publisher needs only `terminal`, `file`.
 
+## Rehearsal using a newer collection path
+
+For a simulated morning post after a collection change, distinguish the historical run from the new-path test. Use the requested morning cutoff for facts; use validated test results for coverage of the simulated input, not the old run's transport errors. A later snapshot does not prove that the historical morning run succeeded. Retain separate limitations that the test did not resolve (for example, unreviewed legal texts).
+
 ## Verification checklist
 
 - `cronjob(action="list")` shows the job enabled, expected schedule, and delivery mode.
