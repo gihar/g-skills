@@ -64,6 +64,12 @@ Use distinct filenames per audience to avoid collisions:
 - Internal PDF: `chestny-znak-internal-daily-YYYY-MM-DD.pdf`.
 - Master artifacts: `chestny-znak-master-YYYY-MM-DD.{json,md}`.
 
+## Synology input to the master
+
+- Let the master preflight pass the local Synology inbox snapshot to the news scanner; downstream reads only the normal master artifact. In `news_diff.acquisition` confirm `mode=synology` and `fetched_at`. Match this timestamp to the current scheduled collection, not to the date of the newest article.
+- Validate the snapshot before replacing direct reads of ЧЗ/Минпромторг: bound its age and size, require all expected pages and valid unique cards, preserve existing item IDs for deduplication. If absent, unreadable, or stale, fall back to direct reads without replaying old data. Keep ЦРПТ separate. Record shallow listing depth or source failures as partial coverage; do not bypass existing seen-state or publication guards.
+- Test integration with the actual received snapshot and `--no-state` before the next scheduled run. To exercise the master in isolation, also redirect master artifacts and stub other stateful scanners; redirecting the output alone does not protect seen-state. Verify the first scheduled master has the expected acquisition metadata before claiming production delivery.
+
 ## Verification
 
 After updating cron jobs:
