@@ -64,6 +64,10 @@ Use distinct filenames per audience to avoid collisions:
 - Internal PDF: `chestny-znak-internal-daily-YYYY-MM-DD.pdf`.
 - Master artifacts: `chestny-znak-master-YYYY-MM-DD.{json,md}`.
 
+## Unresolved federal-law texts
+
+Treat `pdf_review_required` as a persistent review queue, not as evidence that OCR or a second download will run tomorrow. When diagnosing a repeated caveat, audit `pending_pdf_candidate`, check whether there is a separate job that closes items with evidence, and probe the exact configured document URLs with a bounded GET (HEAD may be unsupported; HTTPS can behave differently from the configured HTTP endpoint). Separate oversized PDFs, image-only PDFs and transient download failures; try a matching authoritative text edition or OCR before marking any item resolved. Do not erase a queue entry without a documented full-text decision.
+
 ## Synology input to the master
 
 - Let the master preflight pass the local Synology inbox snapshot to the news scanner; downstream reads only the normal master artifact. In `news_diff.acquisition` confirm `mode=synology` and `fetched_at`. Match this timestamp to the current scheduled collection, not to the date of the newest article.
