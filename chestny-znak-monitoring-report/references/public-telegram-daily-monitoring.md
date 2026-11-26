@@ -24,9 +24,9 @@ chmod +x /home/user/.hermes/scripts/telegram_send_document_caption.py
 7. Convert local time to UTC in the cron expression. Example: `09:30 MSK` → `30 6 * * *`.
 8. Set `enabled_toolsets` narrowly. For master/downstream: master needs `web`, `terminal`, `file`; downstream publisher needs only `terminal`, `file`.
 
-## Coverage wording by cause
+## Separate public content from private coverage alerts
 
-For both the caption and PDF, read the final artifact's `source_coverage` dimensions and `news_diff.errors` separately. Overall `partial` does not imply that the official news feeds failed. If `official_news=complete` and no source-specific gap is documented, do not copy any generic news caveat from `limitations`; retain only the evidenced gaps (e.g. unfinished full-text review or sampled project and watchlist review). If editorial verification found an actual gap despite successful ingestion, name the affected publication, outlet or scope and document why; never infer it from the overall badge.
+For this deployment, do not publish generic coverage caveats or lists of unchecked documents in the Telegram post, its public PDF, or group summaries. This overrides older examples that append a coverage caveat to a post. Use «Среди проверенных публикаций новых подтверждённых изменений не выявлено» when there are no confirmed changes. Keep uncertainty about an individual published fact next to that fact. Preserve all coverage fields and validation gates internally. Send an independent private alert after the daily master: list unresolved acts by number and link, projects by ID/link, and scheduled watchlist items still pending; state a source gap only if independently evidenced. Target only the explicitly authorized DM, not the publication channel or business group. If no gaps, do not send. Do not reopen documented full-text decisions merely because a previously published snapshot still lists them.
 
 ## Rehearsal using a newer collection path
 
